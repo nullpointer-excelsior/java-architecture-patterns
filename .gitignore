@@ -1,0 +1,46 @@
+# Excluir Gradle Wrapper en todos los proyectos
+gradle/wrapper/gradle-wrapper.jar
+gradle/wrapper/gradle-wrapper.properties
+**/gradle/wrapper/gradle-wrapper.properties
+
+# Gradle
+.gradle/
+build/
+out/
+.gradle-cache/
+
+# Excluir wrapper scripts
+gradlew
+gradlew.bat
+
+# IntelliJ IDEA project files
+.idea/
+*.iml
+*.iws
+out/
+
+# Eclipse project files
+.classpath
+.project
+.settings/
+
+# VS Code
+.vscode/
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
+desktop.ini
+
+# Log files
+*.log
+
+# Bytecode
+*.class
+
+# Generated files
+*.jar
+*.war
+*.ear
