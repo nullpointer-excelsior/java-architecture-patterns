@@ -5,10 +5,8 @@ import com.benjamin.hexagonal.domain.DomainException;
 import com.benjamin.hexagonal.domain.events.ProfessionalCreatedEvent;
 import com.benjamin.hexagonal.domain.ports.DomainEventBus;
 import com.benjamin.hexagonal.domain.ports.ProfessionalRepository;
-import com.benjamin.hexagonal.domain.utils.DomainUtils;
 import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.*;
-import org.mockito.MockedStatic;
 import org.mockito.Mockito;
 
 import java.util.UUID;
