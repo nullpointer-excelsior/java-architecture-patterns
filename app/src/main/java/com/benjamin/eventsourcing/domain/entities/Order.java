@@ -1,6 +1,5 @@
 package com.benjamin.eventsourcing.domain.entities;
 
-import com.benjamin.eventsourcing.domain.dtos.CreateOrderDto;
 import com.benjamin.eventsourcing.domain.events.Event;
 import com.benjamin.eventsourcing.domain.events.OrderCompletedEvent;
 import com.benjamin.eventsourcing.domain.events.OrderCreatedEvent;
@@ -24,12 +23,12 @@ public class Order {
     private Shipping shipping;
     private final List<Event> events = new ArrayList<>();
 
-    public static Order create(CreateOrderDto dto) {
+    public static Order create(String orderId, List<Product> products) {
         var order = new Order();
-        var total = dto.products().stream()
+        var total = products.stream()
                 .map(Product::getQuantity)
                 .reduce(0, Integer::sum);
-        var event = new OrderCreatedEvent(dto.orderId(), dto.products(), total, OrderStatus.CREATED);
+        var event = new OrderCreatedEvent(orderId, products, total, OrderStatus.CREATED);
         order.apply(event);
         order.events.add(event);
         return order;

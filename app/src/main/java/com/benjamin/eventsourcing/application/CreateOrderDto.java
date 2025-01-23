@@ -1,4 +1,4 @@
-package com.benjamin.eventsourcing.domain.dtos;
+package com.benjamin.eventsourcing.application;
 
 import com.benjamin.eventsourcing.domain.entities.Product;
 
