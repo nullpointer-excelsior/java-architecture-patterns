@@ -1,0 +1,69 @@
+package com.benjamin.eventsourcing.domain.entities;
+
+import com.benjamin.eventsourcing.domain.dtos.CreateOrderDto;
+import com.benjamin.eventsourcing.domain.events.Event;
+import com.benjamin.eventsourcing.domain.events.OrderCompletedEvent;
+import com.benjamin.eventsourcing.domain.events.OrderCreatedEvent;
+import com.benjamin.eventsourcing.domain.events.OrderDeliveredEvent;
+import lombok.AccessLevel;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
+
+import java.util.ArrayList;
+import java.util.List;
+
+@Getter
+@ToString
+@NoArgsConstructor(access = AccessLevel.PRIVATE)
+public class Order {
+    private String id;
+    private List<Product> products;
+    private Integer total;
+    private OrderStatus status;
+    private Shipping shipping;
+    private final List<Event> events = new ArrayList<>();
+
+    public static Order create(CreateOrderDto dto) {
+        var order = new Order();
+        var total = dto.products().stream()
+                .map(Product::getQuantity)
+                .reduce(0, Integer::sum);
+        var event = new OrderCreatedEvent(dto.orderId(), dto.products(), total, OrderStatus.CREATED);
+        order.apply(event);
+        order.events.add(event);
+        return order;
+    }
+
+    public void delivered(Shipping shipping) {
+        var event = new OrderDeliveredEvent(this.getId(), shipping, OrderStatus.DELIVERED);
+        this.apply(event);
+        this.events.add(event);
+    }
+
+    public void complete() {
+        if (!this.status.equals(OrderStatus.DELIVERED)) {
+            throw new IllegalStateException("Order cannot be completed because it is not in DELIVERED state");
+        }
+        var event = new OrderCompletedEvent(this.getId(), OrderStatus.COMPLETED);
+        this.apply(event);
+        this.events.add(event);
+    }
+
+    private void apply(OrderCreatedEvent event) {
+        this.id = event.getOrderId();
+        this.products = event.getProducts();
+        this.status = event.getStatus();
+        this.total = event.getTotal();
+    }
+
+    public void apply(OrderDeliveredEvent event) {
+        this.shipping = event.getShipping();
+        this.status = event.getStatus();
+    }
+
+    public void apply(OrderCompletedEvent event) {
+        this.status = event.getStatus();
+    }
+
+}
