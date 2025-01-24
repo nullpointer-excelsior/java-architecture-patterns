@@ -24,6 +24,7 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation("org.assertj:assertj-core:3.27.2")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    testImplementation("org.mockito:mockito-core:3.+")
 
     // This dependency is used by the application.
     implementation(libs.guava)

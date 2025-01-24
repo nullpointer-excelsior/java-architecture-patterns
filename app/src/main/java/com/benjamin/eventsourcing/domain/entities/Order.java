@@ -11,6 +11,7 @@ import lombok.ToString;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Stream;
 
 @Getter
 @ToString
@@ -21,7 +22,7 @@ public class Order {
     private Integer total;
     private OrderStatus status;
     private Shipping shipping;
-    private final List<Event> events = new ArrayList<>();
+    private List<Event> events = new ArrayList<>();
 
     public static Order create(String orderId, List<Product> products) {
         var order = new Order();
@@ -31,6 +32,19 @@ public class Order {
         var event = new OrderCreatedEvent(orderId, products, total, OrderStatus.CREATED);
         order.apply(event);
         order.events.add(event);
+        return order;
+    }
+
+    public static Order fromEventStream(Stream<Event> events) {
+        var order = new Order();
+        events.forEach(event -> {
+            switch (event) {
+                case OrderCreatedEvent orderCreatedEvent -> order.apply(orderCreatedEvent);
+                case OrderDeliveredEvent orderDeliveredEvent -> order.apply(orderDeliveredEvent);
+                case OrderCompletedEvent orderCompletedEvent -> order.apply(orderCompletedEvent);
+                default -> throw new IllegalStateException("Invalid event found: " + event.getClass().getName());
+            }
+        });
         return order;
     }
 
@@ -56,13 +70,17 @@ public class Order {
         this.total = event.getTotal();
     }
 
-    public void apply(OrderDeliveredEvent event) {
+    private void apply(OrderDeliveredEvent event) {
         this.shipping = event.getShipping();
         this.status = event.getStatus();
     }
 
-    public void apply(OrderCompletedEvent event) {
+    private void apply(OrderCompletedEvent event) {
         this.status = event.getStatus();
+    }
+
+    public void cleanEvents() {
+        this.events = new ArrayList<>();
     }
 
 }
