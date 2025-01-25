@@ -1,5 +1,6 @@
 package com.benjamin.eventsourcing.application.usecases;
 
+import com.benjamin.eventsourcing.application.commands.CompleteOrderCommand;
 import com.benjamin.eventsourcing.application.commands.CreateOrderCommand;
 import com.benjamin.eventsourcing.application.commands.UpdateOrderToDeliveredCommand;
 import com.benjamin.eventsourcing.domain.entities.Order;
@@ -7,6 +8,7 @@ import com.benjamin.eventsourcing.domain.entities.OrderStatus;
 import com.benjamin.eventsourcing.domain.entities.Product;
 import com.benjamin.eventsourcing.domain.entities.Shipping;
 import com.benjamin.eventsourcing.domain.events.Event;
+import com.benjamin.eventsourcing.domain.events.OrderCompletedEvent;
 import com.benjamin.eventsourcing.domain.events.OrderCreatedEvent;
 import com.benjamin.eventsourcing.domain.events.OrderDeliveredEvent;
 import com.benjamin.eventsourcing.domain.ports.repository.OrderEventStore;
@@ -67,7 +69,6 @@ public class OrderUseCasesTest {
         String orderId = "order-123";
         var shipping = new UpdateOrderToDeliveredCommand.Shipping("shipping-1", "123 Main St", "free");
         UpdateOrderToDeliveredCommand command = new UpdateOrderToDeliveredCommand(orderId, shipping);
-
         // Simulate existing events in the event stream
         OrderCreatedEvent orderCreatedEvent = new OrderCreatedEvent(
                 orderId,
@@ -75,13 +76,10 @@ public class OrderUseCasesTest {
                 2,
                 OrderStatus.CREATED
         );
-
         when(orderEventStore.findByOrderId(orderId))
                 .thenReturn(Stream.of(orderCreatedEvent));
-
         // Act
         orderUseCases.updateOrderToDelivered(command);
-
         // Assert
         ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
         verify(orderEventStore, times(1)).save(eventCaptor.capture());
@@ -95,6 +93,54 @@ public class OrderUseCasesTest {
         assertThat(deliveredEvent.getShipping().getAddress()).isEqualTo(shipping.address());
         assertThat(deliveredEvent.getShipping().getOption()).isEqualTo(shipping.option());
         assertThat(deliveredEvent.getStatus()).isEqualTo(OrderStatus.DELIVERED);
+    }
+
+    @Test
+    @DisplayName("GIVEN OrderUseCases instance WHEN completeOrder THEN should save OrderCompletedEvent")
+    void completeOrder_shouldSaveOrderCompletedEvent() {
+        String orderId = "order-123";
+        // Mocking the event stream
+        OrderCreatedEvent createdEvent = new OrderCreatedEvent(
+                orderId,
+                List.of(new Product("product-1", "guitar", 2)),
+                2,
+                OrderStatus.CREATED
+        );
+        OrderDeliveredEvent deliveredEvent = new OrderDeliveredEvent(
+                orderId,
+                null,
+                OrderStatus.DELIVERED
+        );
+        when(orderEventStore.findByOrderId(orderId)).thenReturn(Stream.of(createdEvent, deliveredEvent));
+        // Executing the method
+        orderUseCases.completeOrder(new CompleteOrderCommand(orderId));
+        // Capturing the saved event
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        verify(orderEventStore, times(1)).save(eventCaptor.capture());
+        // Verifying the event
+        Event capturedEvent = eventCaptor.getValue();
+        assertThat(capturedEvent).isInstanceOf(OrderCompletedEvent.class);
+
+        OrderCompletedEvent completedEvent = (OrderCompletedEvent) capturedEvent;
+        assertThat(completedEvent.getOrderId()).isEqualTo(orderId);
+        assertThat(completedEvent.getStatus()).isEqualTo(OrderStatus.COMPLETED);
+    }
+
+    @DisplayName("GIVEN OrderUseCases instance WHEN completeOrder on non-delivered order THEN should throw exception")
+    void completeOrder_nonDeliveredOrder_shouldThrowException() {
+        String orderId = "order-123";
+        // Mocking the event stream
+        OrderCreatedEvent createdEvent = new OrderCreatedEvent(
+                orderId,
+                List.of(new Product("product-1", "guitar", 2)),
+                2,
+                OrderStatus.CREATED
+        );
+        when(orderEventStore.findByOrderId(orderId)).thenReturn(Stream.of(createdEvent));
+        // Asserting the exception
+        assertThatThrownBy(() -> orderUseCases.completeOrder(new CompleteOrderCommand(orderId)))
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Order cannot be completed because it is not in DELIVERED state");
     }
 
 

@@ -96,7 +96,6 @@ public class OrderTest {
         Event orderCreatedEvent = new OrderCreatedEvent(orderId, products, 5, OrderStatus.CREATED);
         Event orderDeliveredEvent = new OrderDeliveredEvent(orderId, shipping, OrderStatus.DELIVERED);
         Event orderCompletedEvent = new OrderCompletedEvent(orderId, OrderStatus.COMPLETED);
-
         Stream<Event> events = Stream.of(orderCreatedEvent, orderDeliveredEvent, orderCompletedEvent);
         // Act
         Order order = Order.fromEventStream(events);

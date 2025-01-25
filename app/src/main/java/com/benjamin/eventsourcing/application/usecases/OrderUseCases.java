@@ -1,5 +1,6 @@
 package com.benjamin.eventsourcing.application.usecases;
 
+import com.benjamin.eventsourcing.application.commands.CompleteOrderCommand;
 import com.benjamin.eventsourcing.application.commands.CreateOrderCommand;
 import com.benjamin.eventsourcing.application.commands.UpdateOrderToDeliveredCommand;
 import com.benjamin.eventsourcing.domain.entities.Order;
@@ -31,6 +32,15 @@ public class OrderUseCases {
                 command.shipping().address(),
                 command.shipping().option()
         ));
+        order.getEvents()
+                .forEach(event -> this.orderEventStore.save(event));
+        order.cleanEvents();
+    }
+
+    public void completeOrder(CompleteOrderCommand command) {
+        var eventStream = this.orderEventStore.findByOrderId(command.orderId());
+        var order = Order.fromEventStream(eventStream);
+        order.complete();
         order.getEvents()
                 .forEach(event -> this.orderEventStore.save(event));
         order.cleanEvents();
