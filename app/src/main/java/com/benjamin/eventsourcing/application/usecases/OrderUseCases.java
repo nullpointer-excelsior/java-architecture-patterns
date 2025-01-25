@@ -6,7 +6,9 @@ import com.benjamin.eventsourcing.application.commands.UpdateOrderToDeliveredCom
 import com.benjamin.eventsourcing.domain.entities.Order;
 import com.benjamin.eventsourcing.domain.entities.Shipping;
 import com.benjamin.eventsourcing.domain.ports.repository.OrderEventStore;
-import com.benjamin.eventsourcing.domain.ports.repository.OrderRepository;
+import com.benjamin.eventsourcing.domain.ports.repository.OrderProjectionRepository;
+import com.benjamin.eventsourcing.domain.projections.OrderProjection;
+import com.benjamin.eventsourcing.domain.projections.ProductProjection;
 import lombok.AllArgsConstructor;
 
 
@@ -14,7 +16,7 @@ import lombok.AllArgsConstructor;
 public class OrderUseCases {
 
     private OrderEventStore orderEventStore;
-    private OrderRepository orderRepository;
+    private OrderProjectionRepository orderProjectionRepository;
 
     public void createOrder(CreateOrderCommand command) {
         var order = Order.create(
@@ -45,7 +47,14 @@ public class OrderUseCases {
         order.complete();
         order.getEvents()
                 .forEach(event -> this.orderEventStore.save(event));
-        this.orderRepository.save(order);
+        var projection = new OrderProjection(
+                order.getId(),
+                order.getProducts().stream()
+                        .map(p -> new ProductProjection(p.getSku(), p.getName(), p.getQuantity()))
+                        .toList(),
+                order.getTotal()
+        );
+        this.orderProjectionRepository.save(projection);
         order.cleanEvents();
     }
 }

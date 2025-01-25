@@ -3,7 +3,6 @@ package com.benjamin.eventsourcing.application.usecases;
 import com.benjamin.eventsourcing.application.commands.CompleteOrderCommand;
 import com.benjamin.eventsourcing.application.commands.CreateOrderCommand;
 import com.benjamin.eventsourcing.application.commands.UpdateOrderToDeliveredCommand;
-import com.benjamin.eventsourcing.domain.entities.Order;
 import com.benjamin.eventsourcing.domain.entities.OrderStatus;
 import com.benjamin.eventsourcing.domain.entities.Product;
 import com.benjamin.eventsourcing.domain.events.Event;
@@ -11,7 +10,8 @@ import com.benjamin.eventsourcing.domain.events.OrderCompletedEvent;
 import com.benjamin.eventsourcing.domain.events.OrderCreatedEvent;
 import com.benjamin.eventsourcing.domain.events.OrderDeliveredEvent;
 import com.benjamin.eventsourcing.domain.ports.repository.OrderEventStore;
-import com.benjamin.eventsourcing.domain.ports.repository.OrderRepository;
+import com.benjamin.eventsourcing.domain.ports.repository.OrderProjectionRepository;
+import com.benjamin.eventsourcing.domain.projections.OrderProjection;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -31,13 +31,13 @@ public class OrderUseCasesTest {
     @Mock
     private OrderEventStore orderEventStore;
     @Mock
-    private OrderRepository orderRepository;
+    private OrderProjectionRepository orderProjectionRepository;
     private OrderUseCases orderUseCases;
 
     @BeforeEach
     void setUp() {
         MockitoAnnotations.openMocks(this);
-        orderUseCases = new OrderUseCases(orderEventStore, orderRepository);
+        orderUseCases = new OrderUseCases(orderEventStore, orderProjectionRepository);
     }
 
     @Test
@@ -124,18 +124,20 @@ public class OrderUseCasesTest {
         // Act
         orderUseCases.completeOrder(new CompleteOrderCommand(orderId));
         // Assert
-        ArgumentCaptor<Order> orderCaptor = ArgumentCaptor.forClass(Order.class);
+        ArgumentCaptor<OrderProjection> orderProjectionCaptor = ArgumentCaptor.forClass(OrderProjection.class);
         ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
         verify(orderEventStore, times(1)).save(eventCaptor.capture());
-        verify(orderRepository, times(1)).save(orderCaptor.capture());
+        verify(orderProjectionRepository, times(1)).save(orderProjectionCaptor.capture());
 
         assertThat(eventCaptor.getValue())
                 .isInstanceOf(OrderCompletedEvent.class)
                 .extracting("orderId", "status")
                 .containsExactly(orderId, OrderStatus.COMPLETED);
-        assertThat(orderCaptor.getValue())
-                .extracting("id", "status")
-                .containsExactly(orderId, OrderStatus.COMPLETED);
+        var orderProjectionValue = orderProjectionCaptor.getValue();
+        assertThat(orderProjectionValue)
+                .extracting("id", "total")
+                .containsExactly(orderId, 2);
+        assertThat(orderProjectionValue.products()).hasSize(1);
 
     }
 
