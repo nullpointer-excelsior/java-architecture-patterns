@@ -6,6 +6,7 @@ import com.benjamin.eventsourcing.application.commands.UpdateOrderToDeliveredCom
 import com.benjamin.eventsourcing.domain.entities.Order;
 import com.benjamin.eventsourcing.domain.entities.Shipping;
 import com.benjamin.eventsourcing.domain.ports.repository.OrderEventStore;
+import com.benjamin.eventsourcing.domain.ports.repository.OrderRepository;
 import lombok.AllArgsConstructor;
 
 
@@ -13,6 +14,7 @@ import lombok.AllArgsConstructor;
 public class OrderUseCases {
 
     private OrderEventStore orderEventStore;
+    private OrderRepository orderRepository;
 
     public void createOrder(CreateOrderCommand command) {
         var order = Order.create(
@@ -43,6 +45,7 @@ public class OrderUseCases {
         order.complete();
         order.getEvents()
                 .forEach(event -> this.orderEventStore.save(event));
+        this.orderRepository.save(order);
         order.cleanEvents();
     }
 }
