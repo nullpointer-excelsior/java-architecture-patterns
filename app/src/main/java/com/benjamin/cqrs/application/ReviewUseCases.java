@@ -3,6 +3,9 @@ package com.benjamin.cqrs.application;
 import com.benjamin.cqrs.application.commands.AddReviewCommand;
 import com.benjamin.cqrs.application.commands.AddReviewCommentCommand;
 import com.benjamin.cqrs.application.commands.AddReviewReactionCommand;
+import com.benjamin.cqrs.application.events.ReviewCreatedEvent;
+import com.benjamin.cqrs.application.events.ReviewUpdatedEvent;
+import com.benjamin.cqrs.application.ports.integration.EventBus;
 import com.benjamin.cqrs.application.queries.GetReviewsByProductQuery;
 import com.benjamin.cqrs.application.queries.result.ReviewResult;
 import com.benjamin.cqrs.domain.entities.Review;
@@ -12,6 +15,7 @@ import com.benjamin.cqrs.domain.ports.repositories.*;
 import com.benjamin.cqrs.domain.entities.valueobjects.Content;
 import lombok.AllArgsConstructor;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.UUID;
@@ -23,6 +27,7 @@ public class ReviewUseCases {
     private UserReadRepository userReadRepository;
     private ProductReadRepository productReadRepository;
     private ReviewReadRepository reviewReadRepository;
+    private EventBus eventBus;
 
     public void addReview(AddReviewCommand command) {
         var user = this.userReadRepository.findById(command.userId())
@@ -35,6 +40,8 @@ public class ReviewUseCases {
                 .product(product)
                 .build();
         this.reviewWriteRepository.save(review);
+        var event = new ReviewCreatedEvent(UUID.randomUUID().toString(), LocalDateTime.now(), review);
+        this.eventBus.dispatch(event);
     }
 
     public void addReviewReaction(AddReviewReactionCommand command) {
@@ -45,6 +52,8 @@ public class ReviewUseCases {
         var reaction = new ReviewReaction(user, command.reaction());
         review.addReaction(reaction);
         this.reviewWriteRepository.save(review);
+        var event = new ReviewUpdatedEvent(UUID.randomUUID().toString(), LocalDateTime.now(), review);
+        this.eventBus.dispatch(event);
     }
 
     public void addReviewComment(AddReviewCommentCommand command) {
@@ -58,6 +67,8 @@ public class ReviewUseCases {
                 .build();
         review.addComment(comment);
         this.reviewWriteRepository.save(review);
+        var event = new ReviewUpdatedEvent(UUID.randomUUID().toString(), LocalDateTime.now(), review);
+        this.eventBus.dispatch(event);
     }
 
     public List<ReviewResult> getReviewsByProduct(GetReviewsByProductQuery query) {

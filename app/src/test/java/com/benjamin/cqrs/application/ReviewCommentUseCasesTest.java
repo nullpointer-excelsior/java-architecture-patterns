@@ -1,6 +1,9 @@
 package com.benjamin.cqrs.application;
 
 import com.benjamin.cqrs.application.commands.AddReviewCommentReactionCommand;
+import com.benjamin.cqrs.application.events.ReviewCommentCreatedEvent;
+import com.benjamin.cqrs.application.events.ReviewUpdatedEvent;
+import com.benjamin.cqrs.application.ports.integration.EventBus;
 import com.benjamin.cqrs.application.queries.GetReviewCommentsQuery;
 import com.benjamin.cqrs.application.queries.result.ReviewCommentResult;
 import com.benjamin.cqrs.domain.entities.ReactionType;
@@ -37,6 +40,9 @@ class ReviewCommentUseCasesTest {
     @Mock
     private ReviewCommentWriteRepository reviewCommentWriteRepository;
 
+    @Mock
+    private EventBus eventBus;
+
     @InjectMocks
     private ReviewCommentUseCases reviewCommentUseCases;
 
@@ -53,7 +59,7 @@ class ReviewCommentUseCasesTest {
     }
 
     @Test
-    @DisplayName("GIVEN valid user and review comment WHEN add reaction THEN save review comment")
+    @DisplayName("GIVEN valid user and review comment WHEN add reaction THEN save review comment AND dispatch ReviewCommentCreatedEvent")
     void addReviewCommentReaction_savesReviewReaction() {
         when(userReadRepository.findById("userId")).thenReturn(Optional.of(user));
         when(reviewCommentReadRepository.findById("commentId")).thenReturn(Optional.of(reviewComment));
@@ -62,6 +68,7 @@ class ReviewCommentUseCasesTest {
 
         verify(reviewComment).addReaction(any(ReviewReaction.class));
         verify(reviewCommentWriteRepository).save(reviewComment);
+        verify(eventBus).dispatch(any(ReviewCommentCreatedEvent.class));
     }
 
     @Test

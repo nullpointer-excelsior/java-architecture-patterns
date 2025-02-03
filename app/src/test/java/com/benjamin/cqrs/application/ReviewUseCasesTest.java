@@ -2,6 +2,9 @@ package com.benjamin.cqrs.application;
 
 import com.benjamin.cqrs.application.commands.AddReviewCommand;
 import com.benjamin.cqrs.application.commands.AddReviewReactionCommand;
+import com.benjamin.cqrs.application.events.ReviewCreatedEvent;
+import com.benjamin.cqrs.application.events.ReviewUpdatedEvent;
+import com.benjamin.cqrs.application.ports.integration.EventBus;
 import com.benjamin.cqrs.application.queries.GetReviewsByProductQuery;
 import com.benjamin.cqrs.application.queries.result.ReviewResult;
 import com.benjamin.cqrs.domain.entities.*;
@@ -30,6 +33,8 @@ class ReviewUseCasesTest {
     private ProductReadRepository productReadRepository;
     @Mock
     private ReviewReadRepository reviewReadRepository;
+    @Mock
+    private EventBus eventBus;
 
     @InjectMocks
     private ReviewUseCases reviewUseCases;
@@ -51,7 +56,7 @@ class ReviewUseCasesTest {
     }
 
     @Test
-    @DisplayName("GIVEN valid AddReviewCommand WHEN addReview THEN saves review")
+    @DisplayName("GIVEN valid AddReviewCommand WHEN addReview THEN saves review AND dispatch ReviewCreatedEvent")
     void addReview_savesReview() {
         AddReviewCommand command = AddReviewCommand.builder()
                 .sku("sku-123")
@@ -66,6 +71,7 @@ class ReviewUseCasesTest {
         reviewUseCases.addReview(command);
 
         verify(reviewWriteRepository).save(any(Review.class));
+        verify(eventBus).dispatch(any(ReviewCreatedEvent.class));
     }
 
     @Test
@@ -86,7 +92,7 @@ class ReviewUseCasesTest {
     }
 
     @Test
-    @DisplayName("GIVEN valid AddReviewReactionCommand WHEN addReviewReaction THEN saves review with reaction")
+    @DisplayName("GIVEN valid AddReviewReactionCommand WHEN addReviewReaction THEN saves review with reaction AND dispatch ReviewUpdatedEvent")
     void addReviewReaction_savesReaction() {
         AddReviewReactionCommand command = new AddReviewReactionCommand("review-1", "user-1", ReactionType.LIKE);
         review = Review.builder()
@@ -102,6 +108,7 @@ class ReviewUseCasesTest {
         reviewUseCases.addReviewReaction(command);
 
         verify(reviewWriteRepository).save(review);
+        verify(eventBus).dispatch(any(ReviewUpdatedEvent.class));
         assertThat(review.getReactions()).isNotEmpty();
     }
 
