@@ -1,5 +1,6 @@
 package com.benjamin.cqrs.application.commands;
 
-public interface CommandHandler<Command> {
-    void onCommand(Command command);
+
+public interface CommandHandler<T extends Command> {
+   void onCommand(T command);
 }
