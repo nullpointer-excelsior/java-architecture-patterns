@@ -1,17 +1,15 @@
 package com.benjamin.cqrs.application;
 
 import com.benjamin.cqrs.application.commands.AddReviewCommand;
-import com.benjamin.cqrs.application.commands.AddReviewCommentCommand;
 import com.benjamin.cqrs.application.commands.AddReviewReactionCommand;
 import com.benjamin.cqrs.application.queries.GetReviewsByProductQuery;
+import com.benjamin.cqrs.application.queries.result.ReviewResult;
 import com.benjamin.cqrs.domain.entities.*;
 import com.benjamin.cqrs.domain.entities.valueobjects.Content;
 import com.benjamin.cqrs.domain.ports.repositories.*;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
@@ -108,14 +106,14 @@ class ReviewUseCasesTest {
     }
 
     @Test
-    @DisplayName("GIVEN valid GetReviewsByProductQuery WHEN getReviewsByProduct THEN returns reviews")
+    @DisplayName("GIVEN valid GetReviewsByProductQuery WHEN getReviewsByProduct THEN returns reviews result")
     void getReviewsByProduct_returnsReviews() {
         GetReviewsByProductQuery query = new GetReviewsByProductQuery("sku-123");
 
         when(reviewReadRepository.findByProductSku("sku-123")).thenReturn(List.of(review));
 
-        List<Review> result = reviewUseCases.getReviewsByProduct(query);
+        List<ReviewResult> result = reviewUseCases.getReviewsByProduct(query);
 
-        assertThat(result).containsExactly(review);
+        assertThat(result).containsExactly(ReviewResult.map(review));
     }
 }

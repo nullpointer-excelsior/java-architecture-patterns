@@ -2,6 +2,7 @@ package com.benjamin.cqrs.application;
 
 import com.benjamin.cqrs.application.commands.AddReviewCommentReactionCommand;
 import com.benjamin.cqrs.application.queries.GetReviewCommentsQuery;
+import com.benjamin.cqrs.application.queries.result.ReviewCommentResult;
 import com.benjamin.cqrs.domain.entities.ReviewComment;
 import com.benjamin.cqrs.domain.entities.ReviewReaction;
 import com.benjamin.cqrs.domain.ports.repositories.*;
@@ -27,7 +28,10 @@ public class ReviewCommentUseCases {
         this.reviewCommentWriteRepository.save(reviewComment);
     }
 
-    public List<ReviewComment> getReviewComments(GetReviewCommentsQuery query) {
-        return this.reviewCommentReadRepository.findByReviewId(query.reviewId());
+    public List<ReviewCommentResult> getReviewComments(GetReviewCommentsQuery query) {
+        return this.reviewCommentReadRepository.findByReviewId(query.reviewId())
+                .stream()
+                .map(ReviewCommentResult::map)
+                .toList();
     }
 }

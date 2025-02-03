@@ -2,15 +2,16 @@ package com.benjamin.cqrs.application;
 
 import com.benjamin.cqrs.application.commands.AddReviewCommentReactionCommand;
 import com.benjamin.cqrs.application.queries.GetReviewCommentsQuery;
+import com.benjamin.cqrs.application.queries.result.ReviewCommentResult;
 import com.benjamin.cqrs.domain.entities.ReactionType;
 import com.benjamin.cqrs.domain.entities.ReviewComment;
 import com.benjamin.cqrs.domain.entities.ReviewReaction;
 import com.benjamin.cqrs.domain.entities.User;
+import com.benjamin.cqrs.domain.entities.valueobjects.Content;
 import com.benjamin.cqrs.domain.ports.repositories.ReviewCommentReadRepository;
 import com.benjamin.cqrs.domain.ports.repositories.ReviewCommentWriteRepository;
 import com.benjamin.cqrs.domain.ports.repositories.UserReadRepository;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
@@ -88,11 +89,27 @@ class ReviewCommentUseCasesTest {
     @DisplayName("GIVEN review id WHEN get review comments THEN return list of comments")
     void getReviewComments_returnsReviewComments() {
         GetReviewCommentsQuery query = new GetReviewCommentsQuery("reviewId");
-        List<ReviewComment> comments = List.of(mock(ReviewComment.class));
+        ReviewComment comment1 = ReviewComment.builder()
+                .content(new Content(new User("", "john", ""), "good"))
+                .id("id1")
+                .reactions(List.of())
+                .build();
+        ReviewComment comment2 = ReviewComment.builder()
+                .content(new Content(new User("", "jack", ""), "useful"))
+                .id("id2")
+                .reactions(List.of())
+                .build();
+        List<ReviewComment> comments = List.of(comment1, comment2);
         when(reviewCommentReadRepository.findByReviewId("reviewId")).thenReturn(comments);
 
-        List<ReviewComment> result = reviewCommentUseCases.getReviewComments(query);
+        List<ReviewCommentResult> result = reviewCommentUseCases.getReviewComments(query);
 
-        assertThat(result).isEqualTo(comments);
+        assertThat(result).hasSize(2);
+        assertThat(result.get(0).id()).isEqualTo("id1");
+        assertThat(result.get(0).content().content()).isEqualTo("good");
+        assertThat(result.get(0).reactions()).isEmpty();
+        assertThat(result.get(1).id()).isEqualTo("id2");
+        assertThat(result.get(1).content().content()).isEqualTo("useful");
+        assertThat(result.get(1).reactions()).isEmpty();
     }
 }

@@ -4,6 +4,7 @@ import com.benjamin.cqrs.application.commands.AddReviewCommand;
 import com.benjamin.cqrs.application.commands.AddReviewCommentCommand;
 import com.benjamin.cqrs.application.commands.AddReviewReactionCommand;
 import com.benjamin.cqrs.application.queries.GetReviewsByProductQuery;
+import com.benjamin.cqrs.application.queries.result.ReviewResult;
 import com.benjamin.cqrs.domain.entities.Review;
 import com.benjamin.cqrs.domain.entities.ReviewComment;
 import com.benjamin.cqrs.domain.entities.ReviewReaction;
@@ -59,8 +60,11 @@ public class ReviewUseCases {
         this.reviewWriteRepository.save(review);
     }
 
-    public List<Review> getReviewsByProduct(GetReviewsByProductQuery query) {
-        return this.reviewReadRepository.findByProductSku(query.sku());
+    public List<ReviewResult> getReviewsByProduct(GetReviewsByProductQuery query) {
+        return this.reviewReadRepository.findByProductSku(query.sku())
+                .stream()
+                .map(ReviewResult::map)
+                .toList();
     }
 
 }
